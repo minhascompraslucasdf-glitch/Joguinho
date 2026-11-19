@@ -1,0 +1,1983 @@
+
+ca_a_ao_beijinho_leslie_miho_lucas.html
+100%
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Leslie Miho & Lucas - Caça ao Beijinho</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1a1625;
+            font-family: 'Nunito', sans-serif;
+        }
+        h1, .game-title, .bubble-text {
+            font-family: 'Fredoka', sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        @keyframes pulse-heart {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .animate-heart {
+            animation: pulse-heart 1.2s infinite ease-in-out;
+        }
+        @keyframes float-btn {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+        .animate-float-btn {
+            animation: float-btn 1.6s infinite ease-in-out;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 182, 193, 0.7);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+        .start-title-shadow {
+            text-shadow: 0 4px 0 #be123c, 0 8px 20px rgba(190, 18, 60, 0.45);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen relative flex items-center justify-center">
+
+    <!-- Canvas Principal do Jogo -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- TELA INICIAL (START SCREEN) COM PAPEL DE PAREDE ANIMADO -->
+    <div id="startScreen" class="fixed inset-0 z-40 flex flex-col items-center justify-between py-8 px-4 transition-opacity duration-500">
+        <!-- Cabeçalho do Título -->
+        <div class="text-center mt-2 sm:mt-4 pointer-events-none">
+            <div class="inline-flex items-center gap-2 bg-white/85 backdrop-blur-md px-4 py-1.5 rounded-full border-2 border-pink-300 shadow-md mb-3">
+                <span class="text-base">💕</span>
+                <span class="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-pink-600">Edição Especial de Amor</span>
+                <span class="text-base">💕</span>
+            </div>
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold text-white start-title-shadow tracking-tight">
+                Caça ao Beijinho
+            </h1>
+            <p class="text-pink-950 font-extrabold text-base sm:text-xl mt-2 bg-white/75 backdrop-blur-sm inline-block px-5 py-1 rounded-full shadow-sm">
+                Leslie Miho &amp; Lucas
+            </p>
+        </div>
+
+        <!-- Área Central Transparente para destacar o Papel de Parede Animado do Casal -->
+        <div class="flex-1"></div>
+
+        <!-- Botão de Iniciar Jogo -->
+        <div class="flex flex-col items-center gap-3 mb-2 sm:mb-6 z-10">
+            <button id="startGameBtn" class="group relative bg-gradient-to-b from-pink-500 via-rose-500 to-rose-600 hover:from-pink-400 hover:to-rose-500 active:scale-95 text-white font-extrabold text-2xl sm:text-3xl px-12 py-4 sm:py-5 rounded-full shadow-[0_12px_30px_rgba(225,29,72,0.55)] border-4 border-white transition-all duration-200 cursor-pointer flex items-center gap-3">
+                <span class="text-2xl sm:text-3xl group-hover:scale-125 transition-transform">▶</span>
+                <span class="game-title tracking-wider">JOGAR</span>
+                <span class="text-2xl sm:text-3xl animate-heart">💖</span>
+            </button>
+            <div class="bg-white/80 backdrop-blur-md text-rose-900 text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full border border-pink-200 shadow">
+                🔊 Clique em Jogar para ativar a música e os sons do jogo
+            </div>
+        </div>
+    </div>
+
+    <!-- HUD Superior (Visível durante o jogo) -->
+    <div id="gameHud" class="hidden fixed top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-10">
+        <!-- Contador de Beijinhos e Cômodo Atual -->
+        <div class="flex items-center gap-2 sm:gap-3 pointer-events-auto">
+            <div class="glass-panel rounded-2xl px-3.5 py-2 flex items-center gap-2.5">
+                <span class="text-2xl animate-heart">💖</span>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider font-extrabold text-pink-500 leading-none">Beijinhos Dados</div>
+                    <div id="kissCounter" class="text-xl sm:text-2xl font-extrabold text-slate-800 leading-tight game-title">0</div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-2xl px-3.5 py-2 flex items-center gap-2">
+                <span id="roomIcon" class="text-xl">🛋️</span>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider font-extrabold text-indigo-500 leading-none">Cômodo Atual</div>
+                    <div id="currentRoomName" class="text-sm sm:text-base font-bold text-slate-800 leading-tight">Sala de Estar</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botões de Utilidade (Radar, D-Pad Mobile & Som) -->
+        <div class="flex items-center gap-2 pointer-events-auto">
+            <button id="toggleDpadBtn" class="glass-panel hover:bg-pink-50 active:scale-95 transition rounded-2xl px-3 py-2 flex items-center gap-1.5 text-slate-700 font-bold text-xs sm:text-sm cursor-pointer" title="Mostrar/Ocultar Controle Direcional">
+                <span>🕹️</span>
+                <span class="hidden md:inline">Controle</span>
+            </button>
+
+            <button id="toggleRadarBtn" class="glass-panel hover:bg-pink-50 active:scale-95 transition rounded-2xl px-3 py-2 flex items-center gap-1.5 text-slate-700 font-bold text-xs sm:text-sm cursor-pointer" title="Ativar/Desativar Seta Indicadora">
+                <span>🧭</span>
+                <span class="hidden sm:inline">Radar:</span>
+                <span id="radarStatus" class="text-pink-600 font-extrabold">ON</span>
+            </button>
+
+            <button id="toggleSoundBtn" class="glass-panel hover:bg-pink-50 active:scale-95 transition rounded-2xl p-2.5 flex items-center justify-center text-slate-700 cursor-pointer" title="Alternar Música e Som">
+                <span id="soundIcon" class="text-lg leading-none">🔊</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- D-Pad Virtual Opcional (Canto Inferior Direito para Touch/Mobile) -->
+    <div id="virtualDpad" class="hidden fixed bottom-16 right-4 z-20 grid grid-cols-3 gap-1.5 w-36 h-36 opacity-85">
+        <div></div>
+        <button data-dir="up" class="dpad-btn glass-panel rounded-2xl flex items-center justify-center text-xl font-bold text-pink-600 active:bg-pink-200">▲</button>
+        <div></div>
+        <button data-dir="left" class="dpad-btn glass-panel rounded-2xl flex items-center justify-center text-xl font-bold text-pink-600 active:bg-pink-200">◀</button>
+        <div class="glass-panel rounded-full flex items-center justify-center text-sm">💖</div>
+        <button data-dir="right" class="dpad-btn glass-panel rounded-2xl flex items-center justify-center text-xl font-bold text-pink-600 active:bg-pink-200">▶</button>
+        <div></div>
+        <button data-dir="down" class="dpad-btn glass-panel rounded-2xl flex items-center justify-center text-xl font-bold text-pink-600 active:bg-pink-200">▼</button>
+        <div></div>
+    </div>
+
+    <!-- Barra de Progresso do Beijinho (Aparece durante os 3 segundos de interação) -->
+    <div id="kissProgressContainer" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <div class="glass-panel rounded-full px-5 py-2.5 flex flex-col items-center gap-1.5 shadow-xl border-pink-400">
+            <div class="text-sm font-extrabold text-pink-600 flex items-center gap-1.5 game-title">
+                <span>💋</span> Dando muito carinho no Lucas... <span>💕</span>
+            </div>
+            <div class="w-48 sm:w-56 h-2.5 bg-pink-100 rounded-full overflow-hidden border border-pink-200">
+                <div id="kissProgressBar" class="h-full bg-gradient-to-r from-pink-400 via-rose-500 to-red-500 rounded-full transition-all duration-75" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão Interativo "Dar Beijinho" (Aparece quando Leslie Miho chega perto de Lucas) -->
+    <div id="interactContainer" class="hidden fixed bottom-24 sm:bottom-14 left-1/2 -translate-x-1/2 z-20">
+        <button id="giveKissBtn" class="animate-float-btn bg-gradient-to-r from-pink-500 via-rose-500 to-red-500 hover:from-pink-600 hover:to-red-600 active:scale-95 text-white font-extrabold text-base sm:text-lg px-7 py-3.5 rounded-full shadow-[0_10px_25px_rgba(244,63,94,0.55)] border-2 border-white flex items-center gap-2.5 cursor-pointer transition-transform">
+            <span class="text-2xl">💋</span>
+            <span class="game-title tracking-wide">Dar Beijinho</span>
+            <span class="hidden sm:inline-block text-xs bg-white/25 px-2 py-0.5 rounded-full font-bold ml-1">[Espaço]</span>
+        </button>
+    </div>
+
+    <!-- Notificação Toast de Teleporte / Dica -->
+    <div id="toastBanner" class="hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-300 opacity-95">
+        <div class="bg-slate-900/80 backdrop-blur-md text-white text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full shadow-lg border border-white/15 text-center whitespace-nowrap">
+            Use <span class="text-pink-300 font-bold">WASD / Setas</span> ou <span class="text-pink-300 font-bold">Clique/Toque</span> no chão para andar
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * SINTETIZADOR DE ÁUDIO E MÚSICA DE FUNDO (WEB AUDIO API)
+         * ============================================================================
+         */
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+                this.bgmPlaying = false;
+                this.bgmTimer = null;
+                this.bgmStep = 0;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // Música de fundo leve, alegre e aconchegante (estilo marimba/piano fofo)
+            startBGM() {
+                this.init();
+                if (this.bgmPlaying) return;
+                this.bgmPlaying = true;
+
+                // Melodia doce e acolhedora em Dó Maior / Lá Menor (BPM ~105)
+                const melody = [
+                    523.25, 0, 659.25, 783.99,   // C5, E5, G5
+                    880.00, 783.99, 659.25, 0,   // A5, G5, E5
+                    587.33, 0, 698.46, 880.00,   // D5, F5, A5
+                    783.99, 659.25, 587.33, 0,   // G5, E5, D5
+                    523.25, 659.25, 783.99, 1046.50, // C5, E5, G5, C6
+                    987.77, 880.00, 783.99, 659.25,  // B5, A5, G5, E5
+                    587.33, 698.46, 659.25, 587.33,  // D5, F5, E5, D5
+                    523.25, 0, 523.25, 0         // C5
+                ];
+
+                const bass = [
+                    261.63, 0, 329.63, 0,
+                    220.00, 0, 261.63, 0,
+                    174.61, 0, 220.00, 0,
+                    196.00, 0, 246.94, 0,
+                    261.63, 0, 329.63, 0,
+                    220.00, 0, 261.63, 0,
+                    174.61, 0, 196.00, 0,
+                    261.63, 0, 196.00, 0
+                ];
+
+                const playBeat = () => {
+                    if (!this.bgmPlaying) return;
+                    if (this.enabled && this.ctx && this.ctx.state === 'running') {
+                        const now = this.ctx.currentTime;
+                        const idx = this.bgmStep % melody.length;
+
+                        // Nota da melodia (timbre suave tipo caixinha de música/marimba)
+                        const freq = melody[idx];
+                        if (freq > 0) {
+                            const osc = this.ctx.createOscillator();
+                            const gain = this.ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(freq, now);
+                            gain.gain.setValueAtTime(0.001, now);
+                            gain.gain.linearRampToValueAtTime(0.042, now + 0.02);
+                            gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.34);
+                            osc.connect(gain);
+                            gain.connect(this.ctx.destination);
+                            osc.start(now);
+                            osc.stop(now + 0.36);
+                        }
+
+                        // Nota de acompanhamento suave
+                        const bFreq = bass[idx];
+                        if (bFreq > 0) {
+                            const oscB = this.ctx.createOscillator();
+                            const gainB = this.ctx.createGain();
+                            oscB.type = 'triangle';
+                            oscB.frequency.setValueAtTime(bFreq, now);
+                            gainB.gain.setValueAtTime(0.001, now);
+                            gainB.gain.linearRampToValueAtTime(0.028, now + 0.03);
+                            gainB.gain.exponentialRampToValueAtTime(0.0008, now + 0.42);
+                            oscB.connect(gainB);
+                            gainB.connect(this.ctx.destination);
+                            oscB.start(now);
+                            oscB.stop(now + 0.44);
+                        }
+                    }
+                    this.bgmStep++;
+                };
+
+                playBeat();
+                this.bgmTimer = setInterval(playBeat, 290);
+            }
+
+            playStartChime() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((f, i) => {
+                    const t = now + i * 0.08;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, t);
+                    gain.gain.setValueAtTime(0.12, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(t);
+                    osc.stop(t + 0.36);
+                });
+            }
+
+            playStep() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(125 + Math.random() * 25, now);
+                osc.frequency.exponentialRampToValueAtTime(60, now + 0.045);
+                gain.gain.setValueAtTime(0.035, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+
+            playKissSequence() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+
+                // Efeito "Mwah!" fofo inicial
+                const oscKiss = this.ctx.createOscillator();
+                const gainKiss = this.ctx.createGain();
+                oscKiss.type = 'sine';
+                oscKiss.frequency.setValueAtTime(340, now);
+                oscKiss.frequency.exponentialRampToValueAtTime(920, now + 0.12);
+                oscKiss.frequency.exponentialRampToValueAtTime(440, now + 0.24);
+                gainKiss.gain.setValueAtTime(0.18, now);
+                gainKiss.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                oscKiss.connect(gainKiss);
+                gainKiss.connect(this.ctx.destination);
+                oscKiss.start(now);
+                oscKiss.stop(now + 0.25);
+
+                // Sininho mágico romântico durante os 3 segundos
+                const notes = [523.25, 659.25, 783.99, 1046.50, 987.77, 783.99, 1046.50, 1318.51];
+                notes.forEach((freq, idx) => {
+                    const start = now + 0.22 + idx * 0.32;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.001, start);
+                    gain.gain.linearRampToValueAtTime(0.085, start + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.45);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + 0.46);
+                });
+            }
+
+            playTeleport() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(960, now + 0.24);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.27);
+            }
+        }
+
+        const sfx = new SoundFX();
+
+        /**
+         * ============================================================================
+         * CONFIGURAÇÃO DO MUNDO E PLANTA DA CASA (1600 x 1100)
+         * Passagens e corredores amplos (>= 110px) e spawns 100% livres
+         * ============================================================================
+         */
+        const WORLD = {
+            width: 1600,
+            height: 1100,
+            wallThickness: 20
+        };
+
+        const ROOMS = [
+            {
+                id: 'bedroom',
+                name: 'Quarto do Casal',
+                icon: '🛏️',
+                x: 40, y: 40, w: 740, h: 490,
+                floorColor: '#f3e5d8',
+                floorAccent: '#e7d3c1',
+                safeCenter: { x: 420, y: 310 },
+                spawnPoints: [
+                    { x: 420, y: 260 },
+                    { x: 520, y: 370 },
+                    { x: 350, y: 410 }
+                ]
+            },
+            {
+                id: 'bathroom',
+                name: 'Banheiro',
+                icon: '🛁',
+                x: 800, y: 40, w: 760, h: 490,
+                floorColor: '#e0f2fe',
+                floorAccent: '#bae6fd',
+                safeCenter: { x: 1150, y: 310 },
+                spawnPoints: [
+                    { x: 1120, y: 290 },
+                    { x: 1290, y: 380 },
+                    { x: 980, y: 390 }
+                ]
+            },
+            {
+                id: 'livingroom',
+                name: 'Sala de Estar',
+                icon: '🛋️',
+                x: 40, y: 550, w: 740, h: 510,
+                floorColor: '#fde68a',
+                floorAccent: '#fcd34d',
+                safeCenter: { x: 420, y: 780 },
+                spawnPoints: [
+                    { x: 640, y: 760 },
+                    { x: 380, y: 950 },
+                    { x: 630, y: 880 }
+                ]
+            },
+            {
+                id: 'kitchen',
+                name: 'Cozinha',
+                icon: '🍳',
+                x: 800, y: 550, w: 760, h: 510,
+                floorColor: '#f1f5f9',
+                floorAccent: '#e2e8f0',
+                safeCenter: { x: 1150, y: 730 },
+                spawnPoints: [
+                    { x: 960, y: 780 },
+                    { x: 1380, y: 840 },
+                    { x: 1150, y: 710 }
+                ]
+            }
+        ];
+
+        // Paredes Estruturais com Portas Amplas de 160px de largura
+        const WALLS = [
+            // Bordas externas da casa
+            { x: 20, y: 20, w: 1560, h: 20 },   // Topo
+            { x: 20, y: 1060, w: 1560, h: 20 }, // Base
+            { x: 20, y: 40, w: 20, h: 1020 },   // Esquerda
+            { x: 1560, y: 40, w: 20, h: 1020 }, // Direita
+
+            // Parede Vertical Central (Portas de 160px de altura!)
+            // Quarto <-> Banheiro (abertura em y: 210..370 -> 160px)
+            { x: 780, y: 40, w: 20, h: 170 },
+            { x: 780, y: 370, w: 20, h: 160 },
+            // Sala <-> Cozinha (abertura em y: 720..880 -> 160px)
+            { x: 780, y: 550, w: 20, h: 170 },
+            { x: 780, y: 880, w: 20, h: 180 },
+
+            // Parede Horizontal Central (Portas de 160px de largura!)
+            // Quarto <-> Sala (abertura em x: 340..500 -> 160px)
+            { x: 40, y: 530, w: 300, h: 20 },
+            { x: 500, y: 530, w: 280, h: 20 },
+            // Banheiro <-> Cozinha (abertura em x: 1100..1260 -> 160px)
+            { x: 800, y: 530, w: 300, h: 20 },
+            { x: 1260, y: 530, w: 300, h: 20 }
+        ];
+
+        // Móveis bem distribuídos com corredores amplos (>= 110px)
+        const FURNITURE = [
+            // --- QUARTO DO CASAL ---
+            { type: 'rug_bedroom', x: 270, y: 190, w: 320, h: 220, solid: false },
+            { type: 'bed', x: 65, y: 65, w: 190, h: 220, solid: true },
+            { type: 'nightstand', x: 65, y: 300, w: 60, h: 60, solid: true },
+            { type: 'wardrobe', x: 520, y: 55, w: 220, h: 75, solid: true },
+            { type: 'vanity', x: 65, y: 435, w: 145, h: 70, solid: true },
+            { type: 'plant', x: 710, y: 465, w: 48, h: 48, solid: true },
+
+            // --- BANHEIRO ---
+            { type: 'bath_mat', x: 960, y: 190, w: 190, h: 115, solid: false },
+            { type: 'bathtub', x: 1265, y: 60, w: 265, h: 125, solid: true },
+            { type: 'sink_bath', x: 830, y: 58, w: 185, h: 75, solid: true },
+            { type: 'toilet', x: 1460, y: 260, w: 75, h: 90, solid: true },
+            { type: 'laundry_basket', x: 830, y: 435, w: 65, h: 65, solid: true },
+
+            // --- SALA DE ESTAR ---
+            { type: 'rug_living', x: 195, y: 655, w: 340, h: 235, solid: false },
+            { type: 'sofa', x: 75, y: 675, w: 95, h: 210, solid: true },
+            { type: 'coffee_table', x: 240, y: 730, w: 85, h: 110, solid: true },
+            { type: 'tv_stand', x: 455, y: 690, w: 68, h: 185, solid: true },
+            { type: 'bookshelf', x: 560, y: 975, w: 185, h: 65, solid: true },
+            { type: 'plant', x: 70, y: 985, w: 50, h: 50, solid: true },
+
+            // --- COZINHA ---
+            { type: 'kitchen_counter', x: 1160, y: 565, w: 365, h: 78, solid: true },
+            { type: 'stove', x: 1250, y: 565, w: 90, h: 78, solid: true },
+            { type: 'fridge', x: 1460, y: 665, w: 80, h: 90, solid: true },
+            { type: 'dining_table', x: 1050, y: 825, w: 210, h: 130, solid: true },
+            { type: 'chair', x: 1085, y: 782, w: 46, h: 32, solid: true },
+            { type: 'chair', x: 1175, y: 782, w: 46, h: 32, solid: true },
+            { type: 'chair', x: 1085, y: 965, w: 46, h: 32, solid: true },
+            { type: 'chair', x: 1175, y: 965, w: 46, h: 32, solid: true },
+            { type: 'plant', x: 830, y: 985, w: 48, h: 48, solid: true }
+        ];
+
+        /**
+         * ============================================================================
+         * ESTADO DO JOGO, TELA INICIAL E ENTIDADES (LESLIE MIHO & LUCAS)
+         * ============================================================================
+         */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const state = {
+            started: false, // Começa na Tela Inicial (Start Screen)
+            kisses: 0,
+            isKissing: false,
+            kissTimer: 0,
+            kissDuration: 3.0, // Exatos 3 segundos
+            nearLucas: false,
+            showRadar: true,
+            camera: { x: 0, y: 0 },
+            targetPoint: null,
+            keys: {},
+            dpadKeys: { up: false, down: false, left: false, right: false },
+            hearts: [],
+            sparkles: [],
+            menuHearts: [],
+            stepAccumulator: 0
+        };
+
+        // Hitbox pequena apenas nos pés (footRadius = 11) para nunca prender nos móveis!
+        const leslie = {
+            name: 'Leslie Miho',
+            x: 635,
+            y: 775,
+            footOffsetY: 13,
+            footRadius: 11,
+            speed: 285,
+            dir: 'right',
+            walkCycle: 0,
+            breathCycle: 0,
+            blinkTimer: 2.5,
+            isBlinking: false,
+            isMoving: false,
+            happy: false
+        };
+
+        const lucas = {
+            name: 'Lucas',
+            x: 1120,
+            y: 290,
+            footOffsetY: 13,
+            footRadius: 12,
+            currentRoomId: 'bathroom',
+            breathCycle: 0,
+            blinkTimer: 1.8,
+            isBlinking: false,
+            happy: false,
+            scale: 1
+        };
+
+        // Inicializa corações flutuantes para o papel de parede animado da tela inicial
+        function initMenuHearts() {
+            const colors = ['#ff2a6d', '#ff5e8e', '#fb7185', '#f43f5e', '#ffffff', '#fda4af'];
+            state.menuHearts = [];
+            for (let i = 0; i < 34; i++) {
+                state.menuHearts.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    vy: -22 - Math.random() * 40,
+                    size: 12 + Math.random() * 22,
+                    alpha: 0.25 + Math.random() * 0.65,
+                    wobble: Math.random() * Math.PI * 2,
+                    pulsePhase: Math.random() * Math.PI * 2,
+                    color: colors[i % colors.length]
+                });
+            }
+        }
+        initMenuHearts();
+
+        /**
+         * ============================================================================
+         * CONTROLES E EVENTOS DE UI
+         * ============================================================================
+         */
+        const startScreenEl = document.getElementById('startScreen');
+        const startGameBtn = document.getElementById('startGameBtn');
+        const gameHudEl = document.getElementById('gameHud');
+        const kissCounterEl = document.getElementById('kissCounter');
+        const currentRoomNameEl = document.getElementById('currentRoomName');
+        const roomIconEl = document.getElementById('roomIcon');
+        const interactContainerEl = document.getElementById('interactContainer');
+        const giveKissBtn = document.getElementById('giveKissBtn');
+        const kissProgressContainer = document.getElementById('kissProgressContainer');
+        const kissProgressBar = document.getElementById('kissProgressBar');
+        const toggleRadarBtn = document.getElementById('toggleRadarBtn');
+        const radarStatusEl = document.getElementById('radarStatus');
+        const toggleSoundBtn = document.getElementById('toggleSoundBtn');
+        const soundIconEl = document.getElementById('soundIcon');
+        const toggleDpadBtn = document.getElementById('toggleDpadBtn');
+        const virtualDpadEl = document.getElementById('virtualDpad');
+        const toastBanner = document.getElementById('toastBanner');
+
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Iniciar Jogo ao clicar no botão "JOGAR"
+        startGameBtn.addEventListener('click', () => {
+            if (state.started) return;
+            state.started = true;
+
+            // Ativa áudio e música de fundo aconchegante
+            sfx.init();
+            sfx.playStartChime();
+            sfx.startBGM();
+
+            // Garante posições livres iniciais
+            ensureFreePosition(leslie);
+            ensureFreePosition(lucas);
+
+            // Transição suave da tela inicial para o jogo
+            startScreenEl.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                startScreenEl.classList.add('hidden');
+            }, 500);
+
+            gameHudEl.classList.remove('hidden');
+            toastBanner.classList.remove('hidden');
+        });
+
+        // Teclado
+        window.addEventListener('keydown', (e) => {
+            if (!state.started) {
+                if (e.code === 'Enter' || e.code === 'Space') {
+                    startGameBtn.click();
+                }
+                return;
+            }
+            const key = e.key.toLowerCase();
+            state.keys[key] = true;
+
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(key)) {
+                state.targetPoint = null;
+            }
+
+            if ((e.code === 'Space' || e.code === 'Enter') && state.nearLucas && !state.isKissing) {
+                e.preventDefault();
+                startKissing();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            state.keys[e.key.toLowerCase()] = false;
+        });
+
+        // D-Pad Virtual Touch/Mouse
+        document.querySelectorAll('.dpad-btn').forEach(btn => {
+            const dir = btn.dataset.dir;
+            const setDir = (val) => {
+                state.dpadKeys[dir] = val;
+                if (val) state.targetPoint = null;
+            };
+            btn.addEventListener('mousedown', (e) => { e.stopPropagation(); setDir(true); });
+            btn.addEventListener('mouseup', () => setDir(false));
+            btn.addEventListener('mouseleave', () => setDir(false));
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); setDir(true); });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); setDir(false); });
+        });
+
+        toggleDpadBtn.addEventListener('click', () => {
+            virtualDpadEl.classList.toggle('hidden');
+        });
+
+        // Clique ou Toque no Mapa para Mover Leslie Miho
+        function handlePointerMoveTo(clientX, clientY) {
+            if (!state.started || state.isKissing) return;
+            sfx.init();
+            const worldX = clientX + state.camera.x;
+            const worldY = clientY + state.camera.y;
+            state.targetPoint = {
+                x: Math.max(55, Math.min(WORLD.width - 55, worldX)),
+                y: Math.max(55, Math.min(WORLD.height - 55, worldY))
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) handlePointerMoveTo(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                handlePointerMoveTo(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        // Botão "Dar Beijinho"
+        giveKissBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (state.nearLucas && !state.isKissing) {
+                startKissing();
+            }
+        });
+
+        // Alternar Radar
+        toggleRadarBtn.addEventListener('click', () => {
+            state.showRadar = !state.showRadar;
+            radarStatusEl.textContent = state.showRadar ? 'ON' : 'OFF';
+            radarStatusEl.className = state.showRadar ? 'text-pink-600 font-extrabold' : 'text-slate-400 font-extrabold';
+        });
+
+        // Alternar Som / Música
+        toggleSoundBtn.addEventListener('click', () => {
+            sfx.enabled = !sfx.enabled;
+            soundIconEl.textContent = sfx.enabled ? '🔊' : '🔇';
+            if (sfx.enabled && state.started) {
+                sfx.init();
+                sfx.startBGM();
+            }
+        });
+
+        /**
+         * ============================================================================
+         * MECÂNICA DO BEIJINHO (3 SEGUNDOS) E TELEPORTE ALEATÓRIO DO LUCAS
+         * ============================================================================
+         */
+        function startKissing() {
+            state.isKissing = true;
+            state.kissTimer = 0;
+            state.targetPoint = null;
+            leslie.isMoving = false;
+            leslie.happy = true;
+            lucas.happy = true;
+
+            const dx = lucas.x - leslie.x;
+            const dy = lucas.y - leslie.y;
+            if (Math.abs(dx) > Math.abs(dy)) {
+                leslie.dir = dx > 0 ? 'right' : 'left';
+            } else {
+                leslie.dir = dy > 0 ? 'down' : 'up';
+            }
+
+            interactContainerEl.classList.add('hidden');
+            kissProgressContainer.classList.remove('hidden');
+            kissProgressBar.style.width = '0%';
+
+            sfx.playKissSequence();
+            spawnHeartsBurst(16);
+        }
+
+        function spawnHeartsBurst(count) {
+            const midX = (leslie.x + lucas.x) / 2;
+            const midY = (leslie.y + lucas.y) / 2 - 22;
+            const heartColors = ['#ff2a6d', '#ff5e8e', '#fb7185', '#f43f5e', '#e11d48', '#ff85a1'];
+
+            for (let i = 0; i < count; i++) {
+                state.hearts.push({
+                    x: midX + (Math.random() - 0.5) * 70,
+                    y: midY + (Math.random() - 0.5) * 35,
+                    vx: (Math.random() - 0.5) * 60,
+                    vy: -48 - Math.random() * 65,
+                    size: 14 + Math.random() * 14,
+                    alpha: 1,
+                    wobble: Math.random() * Math.PI * 2,
+                    color: heartColors[Math.floor(Math.random() * heartColors.length)]
+                });
+            }
+        }
+
+        function spawnTeleportEffect(x, y, color = '#a855f7') {
+            for (let i = 0; i < 28; i++) {
+                const angle = (Math.PI * 2 * i) / 28 + Math.random() * 0.2;
+                const speed = 45 + Math.random() * 110;
+                state.sparkles.push({
+                    x,
+                    y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: 4 + Math.random() * 6,
+                    alpha: 1,
+                    color: i % 2 === 0 ? color : '#fde047'
+                });
+            }
+        }
+
+        function teleportLucasToRandomRoom() {
+            spawnTeleportEffect(lucas.x, lucas.y, '#f43f5e');
+
+            // Escolhe um cômodo diferente do atual
+            const otherRooms = ROOMS.filter(r => r.id !== lucas.currentRoomId);
+            const nextRoom = otherRooms[Math.floor(Math.random() * otherRooms.length)];
+
+            // Filtra apenas pontos de spawn garantidamente livres de móveis
+            const validSpots = nextRoom.spawnPoints.filter(pt =>
+                isFootPositionFree(pt.x, pt.y + lucas.footOffsetY, lucas.footRadius + 4, false)
+            );
+            const spot = validSpots.length > 0
+                ? validSpots[Math.floor(Math.random() * validSpots.length)]
+                : nextRoom.safeCenter;
+
+            lucas.currentRoomId = nextRoom.id;
+            lucas.x = spot.x;
+            lucas.y = spot.y;
+            lucas.scale = 0.1;
+            ensureFreePosition(lucas);
+
+            spawnTeleportEffect(lucas.x, lucas.y, '#38bdf8');
+            sfx.playTeleport();
+
+            showToast(`✨ Lucas apareceu em outro cômodo! Vá procurá-lo!`);
+        }
+
+        let toastTimeout = null;
+        function showToast(msg) {
+            toastBanner.firstElementChild.textContent = msg;
+            toastBanner.style.opacity = '1';
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastBanner.innerHTML = `<div class="bg-slate-900/80 backdrop-blur-md text-white text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full shadow-lg border border-white/15 text-center whitespace-nowrap">Use <span class="text-pink-300 font-bold">WASD / Setas</span> ou <span class="text-pink-300 font-bold">Clique/Toque</span> no chão para andar</div>`;
+            }, 3500);
+        }
+
+        /**
+         * ============================================================================
+         * FÍSICA APRIMORADA: HITBOX NOS PÉS + DESLIZAMENTO + UNSTUCK AUTOMÁTICO
+         * ============================================================================
+         */
+        function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
+            const closestX = Math.max(rx, Math.min(cx, rx + rw));
+            const closestY = Math.max(ry, Math.min(cy, ry + rh));
+            const dx = cx - closestX;
+            const dy = cy - closestY;
+            return (dx * dx + dy * dy) < (radius * radius);
+        }
+
+        // Verifica se a posição dos pés (footX, footY) está completamente livre
+        function isFootPositionFree(footX, footY, radius, checkLucas = true) {
+            // Limites internos da casa
+            if (footX - radius < 40 || footX + radius > WORLD.width - 40 ||
+                footY - radius < 40 || footY + radius > WORLD.height - 40) {
+                return false;
+            }
+
+            // Paredes
+            for (const w of WALLS) {
+                if (circleRectCollision(footX, footY, radius, w.x, w.y, w.w, w.h)) {
+                    return false;
+                }
+            }
+
+            // Móveis sólidos (com leve tolerância para nunca engasgar nas quinas)
+            for (const f of FURNITURE) {
+                if (f.solid && circleRectCollision(footX, footY, radius, f.x, f.y, f.w, f.h)) {
+                    return false;
+                }
+            }
+
+            // Distância suave em relação aos pés do Lucas
+            if (checkLucas) {
+                const lucasFootY = lucas.y + lucas.footOffsetY;
+                const dist = Math.hypot(footX - lucas.x, footY - lucasFootY);
+                if (dist < radius + lucas.footRadius - 2) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function canLeslieMoveTo(nx, ny) {
+            return isFootPositionFree(nx, ny + leslie.footOffsetY, leslie.footRadius, true);
+        }
+
+        // Sistema automático "Unstuck": se por qualquer motivo houver sobreposição,
+        // empurra suavemente para o ponto livre mais próximo em espiral
+        function ensureFreePosition(entity) {
+            const isLeslie = entity === leslie;
+            const footY = entity.y + entity.footOffsetY;
+            if (isFootPositionFree(entity.x, footY, entity.footRadius, isLeslie)) {
+                return;
+            }
+
+            for (let dist = 4; dist <= 160; dist += 4) {
+                for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 8) {
+                    const testX = entity.x + Math.cos(angle) * dist;
+                    const testY = entity.y + Math.sin(angle) * dist;
+                    if (isFootPositionFree(testX, testY + entity.footOffsetY, entity.footRadius, isLeslie)) {
+                        entity.x = testX;
+                        entity.y = testY;
+                        return;
+                    }
+                }
+            }
+        }
+
+        function updateCurrentRoomUI() {
+            for (const room of ROOMS) {
+                if (
+                    leslie.x >= room.x &&
+                    leslie.x <= room.x + room.w &&
+                    leslie.y >= room.y &&
+                    leslie.y <= room.y + room.h
+                ) {
+                    if (currentRoomNameEl.textContent !== room.name) {
+                        currentRoomNameEl.textContent = room.name;
+                        roomIconEl.textContent = room.icon;
+                    }
+                    break;
+                }
+            }
+        }
+
+        /**
+         * ============================================================================
+         * ANIMAÇÃO DE RESPIRAÇÃO E PISCAR DOS PERSONAGENS (USADO NO MENU E NO JOGO)
+         * ============================================================================
+         */
+        function updateCharacterIdleAnimations(char, dt) {
+            char.breathCycle += dt * 3.0;
+            char.blinkTimer -= dt;
+            if (char.blinkTimer <= 0) {
+                if (!char.isBlinking) {
+                    char.isBlinking = true;
+                    char.blinkTimer = 0.14; // Duração da piscada natural
+                } else {
+                    char.isBlinking = false;
+                    char.blinkTimer = 2.0 + Math.random() * 2.5;
+                }
+            }
+        }
+
+        /**
+         * ============================================================================
+         * LOOP DE ATUALIZAÇÃO (UPDATE)
+         * ============================================================================
+         */
+        function update(dt) {
+            updateCharacterIdleAnimations(leslie, dt);
+            updateCharacterIdleAnimations(lucas, dt);
+
+            // Se estiver na Tela Inicial, atualiza apenas o papel de parede animado
+            if (!state.started) {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                for (const mh of state.menuHearts) {
+                    mh.wobble += dt * 2.2;
+                    mh.pulsePhase += dt * 4.0;
+                    mh.x += Math.sin(mh.wobble) * 18 * dt;
+                    mh.y += mh.vy * dt;
+                    if (mh.y < -40) {
+                        mh.y = h + 30;
+                        mh.x = Math.random() * w;
+                    }
+                }
+                return;
+            }
+
+            if (lucas.scale < 1) {
+                lucas.scale = Math.min(1, lucas.scale + dt * 4.5);
+            }
+
+            // Garante continuamente que Leslie Miho nunca fique presa em nada
+            ensureFreePosition(leslie);
+
+            // Se estiver no meio da animação de 3 segundos de beijinho
+            if (state.isKissing) {
+                state.kissTimer += dt;
+                const progress = Math.min(100, (state.kissTimer / state.kissDuration) * 100);
+                kissProgressBar.style.width = `${progress}%`;
+
+                if (Math.random() < dt * 15) {
+                    spawnHeartsBurst(2);
+                }
+
+                if (state.kissTimer >= state.kissDuration) {
+                    state.isKissing = false;
+                    leslie.happy = false;
+                    lucas.happy = false;
+                    state.kisses += 1;
+                    kissCounterEl.textContent = state.kisses;
+                    kissProgressContainer.classList.add('hidden');
+                    teleportLucasToRandomRoom();
+                }
+            } else {
+                // Movimento da Leslie Miho
+                let moveX = 0;
+                let moveY = 0;
+
+                if (state.keys['w'] || state.keys['arrowup'] || state.dpadKeys.up) moveY -= 1;
+                if (state.keys['s'] || state.keys['arrowdown'] || state.dpadKeys.down) moveY += 1;
+                if (state.keys['a'] || state.keys['arrowleft'] || state.dpadKeys.left) moveX -= 1;
+                if (state.keys['d'] || state.keys['arrowright'] || state.dpadKeys.right) moveX += 1;
+
+                if (moveX === 0 && moveY === 0 && state.targetPoint) {
+                    const dx = state.targetPoint.x - leslie.x;
+                    const dy = state.targetPoint.y - leslie.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 8) {
+                        moveX = dx / dist;
+                        moveY = dy / dist;
+                    } else {
+                        state.targetPoint = null;
+                    }
+                } else if (moveX !== 0 || moveY !== 0) {
+                    const len = Math.hypot(moveX, moveY);
+                    moveX /= len;
+                    moveY /= len;
+                }
+
+                if (moveX !== 0 || moveY !== 0) {
+                    leslie.isMoving = true;
+                    leslie.walkCycle += dt * 11;
+
+                    if (Math.abs(moveX) > Math.abs(moveY)) {
+                        leslie.dir = moveX > 0 ? 'right' : 'left';
+                    } else {
+                        leslie.dir = moveY > 0 ? 'down' : 'up';
+                    }
+
+                    const stepDist = leslie.speed * dt;
+                    const nextX = leslie.x + moveX * stepDist;
+                    const nextY = leslie.y + moveY * stepDist;
+
+                    let moved = false;
+
+                    // Deslizamento separado nos eixos X e Y
+                    if (canLeslieMoveTo(nextX, leslie.y)) {
+                        leslie.x = nextX;
+                        moved = true;
+                    }
+                    if (canLeslieMoveTo(leslie.x, nextY)) {
+                        leslie.y = nextY;
+                        moved = true;
+                    }
+
+                    // Se clicou num ponto inacessível e encostou numa parede, cancela o alvo
+                    if (!moved && state.targetPoint) {
+                        state.targetPoint = null;
+                    }
+
+                    state.stepAccumulator += dt;
+                    if (state.stepAccumulator >= 0.27) {
+                        state.stepAccumulator = 0;
+                        sfx.playStep();
+                    }
+                } else {
+                    leslie.isMoving = false;
+                    leslie.walkCycle = 0;
+                }
+
+                updateCurrentRoomUI();
+
+                // Checa proximidade com Lucas para habilitar botão "Dar Beijinho"
+                const distToLucas = Math.hypot(leslie.x - lucas.x, leslie.y - lucas.y);
+                const isClose = distToLucas <= 92;
+                if (isClose !== state.nearLucas) {
+                    state.nearLucas = isClose;
+                    if (isClose) {
+                        interactContainerEl.classList.remove('hidden');
+                    } else {
+                        interactContainerEl.classList.add('hidden');
+                    }
+                }
+            }
+
+            // Atualiza partículas de coração
+            for (let i = state.hearts.length - 1; i >= 0; i--) {
+                const h = state.hearts[i];
+                h.wobble += dt * 5;
+                h.x += (h.vx + Math.sin(h.wobble) * 25) * dt;
+                h.y += h.vy * dt;
+                h.alpha -= dt * 0.55;
+                if (h.alpha <= 0) {
+                    state.hearts.splice(i, 1);
+                }
+            }
+
+            // Atualiza partículas de brilho (teleporte)
+            for (let i = state.sparkles.length - 1; i >= 0; i--) {
+                const s = state.sparkles[i];
+                s.x += s.vx * dt;
+                s.y += s.vy * dt;
+                s.alpha -= dt * 1.6;
+                if (s.alpha <= 0) {
+                    state.sparkles.splice(i, 1);
+                }
+            }
+
+            // Câmera suave centralizada na Leslie Miho
+            const viewW = window.innerWidth;
+            const viewH = window.innerHeight;
+            let targetCamX = leslie.x - viewW / 2;
+            let targetCamY = leslie.y - viewH / 2;
+
+            if (WORLD.width <= viewW) {
+                targetCamX = (WORLD.width - viewW) / 2;
+            } else {
+                targetCamX = Math.max(0, Math.min(WORLD.width - viewW, targetCamX));
+            }
+
+            if (WORLD.height <= viewH) {
+                targetCamY = (WORLD.height - viewH) / 2;
+            } else {
+                targetCamY = Math.max(0, Math.min(WORLD.height - viewH, targetCamY));
+            }
+
+            state.camera.x += (targetCamX - state.camera.x) * Math.min(1, dt * 8);
+            state.camera.y += (targetCamY - state.camera.y) * Math.min(1, dt * 8);
+        }
+
+        /**
+         * ============================================================================
+         * RENDERIZAÇÃO GRÁFICA (TELA INICIAL ANIMADA + CASA + PERSONAGENS)
+         * ============================================================================
+         */
+        function drawRoundRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.roundRect(x, y, w, h, r);
+        }
+
+        /**
+         * Papel de Parede Animado da Tela Inicial (Casal respirando e piscando + Corações)
+         */
+        function drawStartScreenWallpaper() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            // Fundo degradê romântico pastel
+            const grad = ctx.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, Math.max(w, h) * 0.75);
+            grad.addColorStop(0, '#ffe4e6');
+            grad.addColorStop(0.5, '#fecdd3');
+            grad.addColorStop(1, '#fda4af');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Raios suaves girando lentamente ao fundo
+            ctx.save();
+            ctx.translate(w / 2, h * 0.52);
+            ctx.rotate(performance.now() * 0.00018);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+            for (let i = 0; i < 12; i++) {
+                ctx.rotate(Math.PI / 6);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-45, -Math.max(w, h));
+                ctx.lineTo(45, -Math.max(w, h));
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Coraçõezinhos flutuando e pulsando pelo fundo
+            for (const mh of state.menuHearts) {
+                const pulseScale = 1 + Math.sin(mh.pulsePhase) * 0.14;
+                drawHeartShape(mh.x, mh.y, mh.size * pulseScale, mh.color, mh.alpha);
+            }
+
+            // Círculo acolhedor no chão abaixo do casal
+            const centerX = w / 2;
+            const centerY = h * 0.55;
+            const charScale = Math.min(2.6, Math.max(1.75, Math.min(w, h) / 310));
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY + 38 * charScale, 95 * charScale, 28 * charScale, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(244, 63, 94, 0.35)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.restore();
+
+            // Coração grande pulsando entre Leslie Miho e Lucas
+            const midHeartPulse = 1 + Math.sin(performance.now() * 0.005) * 0.15;
+            drawHeartShape(
+                centerX,
+                centerY - 38 * charScale,
+                22 * charScale * midHeartPulse,
+                '#f43f5e',
+                0.92
+            );
+
+            // Desenha Leslie Miho e Lucas lado a lado, felizes, respirando e piscando!
+            drawLeslieAt(centerX - 36 * charScale, centerY + 12 * charScale, charScale, true, true);
+            drawLucasAt(centerX + 36 * charScale, centerY + 12 * charScale, charScale, true, true);
+        }
+
+        function drawHouseFloors() {
+            ctx.fillStyle = '#2d3a3a';
+            ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+            for (const room of ROOMS) {
+                ctx.fillStyle = room.floorColor;
+                ctx.fillRect(room.x, room.y, room.w, room.h);
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(room.x, room.y, room.w, room.h);
+                ctx.clip();
+
+                if (room.id === 'bedroom' || room.id === 'livingroom') {
+                    ctx.strokeStyle = room.floorAccent;
+                    ctx.lineWidth = 2;
+                    const plankH = 32;
+                    for (let y = room.y; y < room.y + room.h; y += plankH) {
+                        ctx.beginPath();
+                        ctx.moveTo(room.x, y);
+                        ctx.lineTo(room.x + room.w, y);
+                        ctx.stroke();
+                    }
+                } else {
+                    const tileSize = 45;
+                    ctx.fillStyle = room.floorAccent;
+                    for (let y = room.y; y < room.y + room.h; y += tileSize) {
+                        for (let x = room.x; x < room.x + room.w; x += tileSize) {
+                            const gx = Math.floor((x - room.x) / tileSize);
+                            const gy = Math.floor((y - room.y) / tileSize);
+                            if ((gx + gy) % 2 === 0) {
+                                ctx.fillRect(x, y, tileSize, tileSize);
+                            }
+                        }
+                    }
+                }
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.08)';
+                ctx.font = '800 26px Fredoka, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(room.name.toUpperCase(), room.x + room.w / 2, room.y + room.h / 2 + 10);
+                ctx.restore();
+            }
+        }
+
+        function drawFurnitureItem(f) {
+            ctx.save();
+
+            if (f.solid) {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.16)';
+                drawRoundRect(f.x + 5, f.y + 7, f.w, f.h, 10);
+                ctx.fill();
+            }
+
+            switch (f.type) {
+                case 'rug_bedroom':
+                    ctx.fillStyle = '#fbcfe8';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 24);
+                    ctx.fill();
+                    ctx.strokeStyle = '#f472b6';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([10, 6]);
+                    drawRoundRect(f.x + 12, f.y + 12, f.w - 24, f.h - 24, 18);
+                    ctx.stroke();
+                    break;
+
+                case 'rug_living':
+                    ctx.fillStyle = '#fed7aa';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 20);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fb923c';
+                    ctx.lineWidth = 5;
+                    drawRoundRect(f.x + 14, f.y + 14, f.w - 28, f.h - 28, 14);
+                    ctx.stroke();
+                    break;
+
+                case 'bath_mat':
+                    ctx.fillStyle = '#7dd3fc';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 16);
+                    ctx.fill();
+                    break;
+
+                case 'bed':
+                    ctx.fillStyle = '#78350f';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 12);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    drawRoundRect(f.x + 10, f.y + 14, f.w - 20, f.h - 24, 8);
+                    ctx.fill();
+                    ctx.fillStyle = '#f472b6';
+                    drawRoundRect(f.x + 10, f.y + 75, f.w - 20, f.h - 85, 8);
+                    ctx.fill();
+                    ctx.fillStyle = '#fbcfe8';
+                    ctx.fillRect(f.x + 10, f.y + 75, f.w - 20, 16);
+                    ctx.fillStyle = '#f8fafc';
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 2;
+                    drawRoundRect(f.x + 20, f.y + 22, 65, 38, 10);
+                    ctx.fill(); ctx.stroke();
+                    drawRoundRect(f.x + 104, f.y + 22, 65, 38, 10);
+                    ctx.fill(); ctx.stroke();
+                    break;
+
+                case 'nightstand':
+                    ctx.fillStyle = '#92400e';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 8);
+                    ctx.fill();
+                    ctx.fillStyle = '#fef08a';
+                    ctx.beginPath();
+                    ctx.arc(f.x + f.w / 2, f.y + f.h / 2, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#eab308';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    break;
+
+                case 'wardrobe':
+                    ctx.fillStyle = '#78350f';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 8);
+                    ctx.fill();
+                    ctx.strokeStyle = '#451a03';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(f.x + 6, f.y + 6, f.w - 12, f.h - 12);
+                    break;
+
+                case 'vanity':
+                    ctx.fillStyle = '#f8fafc';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 8);
+                    ctx.fill();
+                    ctx.strokeStyle = '#cbd5e1';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#bae6fd';
+                    drawRoundRect(f.x + 22, f.y + 8, f.w - 44, 14, 4);
+                    ctx.fill();
+                    break;
+
+                case 'bathtub':
+                    ctx.fillStyle = '#ffffff';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 24);
+                    ctx.fill();
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = '#7dd3fc';
+                    drawRoundRect(f.x + 18, f.y + 18, f.w - 36, f.h - 36, 18);
+                    ctx.fill();
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.beginPath();
+                    ctx.arc(f.x + 60, f.y + 48, 15, 0, Math.PI * 2);
+                    ctx.arc(f.x + 82, f.y + 42, 11, 0, Math.PI * 2);
+                    ctx.arc(f.x + 195, f.y + 70, 14, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'sink_bath':
+                    ctx.fillStyle = '#f8fafc';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 10);
+                    ctx.fill();
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#bae6fd';
+                    ctx.beginPath();
+                    ctx.ellipse(f.x + f.w / 2, f.y + f.h / 2, 32, 18, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'toilet':
+                    ctx.fillStyle = '#ffffff';
+                    drawRoundRect(f.x + 32, f.y + 12, 34, 66, 8);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.ellipse(f.x + 26, f.y + f.h / 2, 22, 18, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#94a3b8';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    break;
+
+                case 'laundry_basket':
+                    ctx.fillStyle = '#d97706';
+                    ctx.beginPath();
+                    ctx.arc(f.x + f.w / 2, f.y + f.h / 2, f.w / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'sofa':
+                    ctx.fillStyle = '#3b82f6';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 14);
+                    ctx.fill();
+                    ctx.fillStyle = '#1d4ed8';
+                    drawRoundRect(f.x, f.y, 26, f.h, 10);
+                    ctx.fill();
+                    drawRoundRect(f.x, f.y, f.w, 22, 10);
+                    ctx.fill();
+                    drawRoundRect(f.x, f.y + f.h - 22, f.w, 22, 10);
+                    ctx.fill();
+                    break;
+
+                case 'coffee_table':
+                    ctx.fillStyle = '#92400e';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 12);
+                    ctx.fill();
+                    ctx.fillStyle = '#e0f2fe';
+                    drawRoundRect(f.x + 11, f.y + 11, f.w - 22, f.h - 22, 8);
+                    ctx.fill();
+                    break;
+
+                case 'tv_stand':
+                    ctx.fillStyle = '#334155';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 8);
+                    ctx.fill();
+                    ctx.fillStyle = '#0f172a';
+                    drawRoundRect(f.x + 15, f.y + 16, 15, f.h - 32, 4);
+                    ctx.fill();
+                    break;
+
+                case 'bookshelf':
+                    ctx.fillStyle = '#78350f';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 6);
+                    ctx.fill();
+                    const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
+                    for (let i = 0; i < 8; i++) {
+                        ctx.fillStyle = colors[i % colors.length];
+                        ctx.fillRect(f.x + 12 + i * 20, f.y + 10, 13, f.h - 20);
+                    }
+                    break;
+
+                case 'kitchen_counter':
+                    ctx.fillStyle = '#cbd5e1';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 8);
+                    ctx.fill();
+                    ctx.strokeStyle = '#64748b';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#94a3b8';
+                    drawRoundRect(f.x + 25, f.y + 16, 65, 44, 6);
+                    ctx.fill();
+                    break;
+
+                case 'stove':
+                    ctx.fillStyle = '#1e293b';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 6);
+                    ctx.fill();
+                    ctx.fillStyle = '#ef4444';
+                    const burners = [[25, 22], [65, 22], [25, 55], [65, 55]];
+                    burners.forEach(([bx, by]) => {
+                        ctx.beginPath();
+                        ctx.arc(f.x + bx, f.y + by, 9, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    break;
+
+                case 'fridge':
+                    ctx.fillStyle = '#f8fafc';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 10);
+                    ctx.fill();
+                    ctx.strokeStyle = '#64748b';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    break;
+
+                case 'dining_table':
+                    ctx.fillStyle = '#b45309';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 16);
+                    ctx.fill();
+                    ctx.strokeStyle = '#78350f';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(f.x + 58, f.y + 30, 13, 0, Math.PI * 2);
+                    ctx.arc(f.x + 152, f.y + 30, 13, 0, Math.PI * 2);
+                    ctx.arc(f.x + 58, f.y + f.h - 30, 13, 0, Math.PI * 2);
+                    ctx.arc(f.x + 152, f.y + f.h - 30, 13, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'chair':
+                    ctx.fillStyle = '#d97706';
+                    drawRoundRect(f.x, f.y, f.w, f.h, 8);
+                    ctx.fill();
+                    break;
+
+                case 'plant':
+                    ctx.fillStyle = '#c2410c';
+                    ctx.beginPath();
+                    ctx.arc(f.x + f.w / 2, f.y + f.h / 2, f.w * 0.42, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#16a34a';
+                    for (let a = 0; a < 6; a++) {
+                        const ang = (Math.PI * 2 * a) / 6;
+                        ctx.beginPath();
+                        ctx.arc(
+                            f.x + f.w / 2 + Math.cos(ang) * 9,
+                            f.y + f.h / 2 + Math.sin(ang) * 9,
+                            10, 0, Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+                    ctx.fillStyle = '#22c55e';
+                    ctx.beginPath();
+                    ctx.arc(f.x + f.w / 2, f.y + f.h / 2, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+            }
+
+            ctx.restore();
+        }
+
+        function drawWalls() {
+            for (const w of WALLS) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+                ctx.fillRect(w.x + 4, w.y + 6, w.w, w.h);
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(w.x, w.y, w.w, w.h);
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(w.x + 2, w.y + 2, w.w - 4, w.h - 4);
+            }
+        }
+
+        function drawNameBalloon(x, y, text, bgColor, borderColor, textColor) {
+            ctx.save();
+            ctx.font = '700 14px Fredoka, sans-serif';
+            const paddingX = 14;
+            const textWidth = ctx.measureText(text).width;
+            const boxW = textWidth + paddingX * 2;
+            const boxH = 28;
+            const boxX = x - boxW / 2;
+            const boxY = y - boxH;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+            drawRoundRect(boxX + 2, boxY + 3, boxW, boxH, 14);
+            ctx.fill();
+
+            ctx.fillStyle = bgColor;
+            drawRoundRect(boxX, boxY, boxW, boxH, 14);
+            ctx.fill();
+
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x - 6, boxY + boxH - 1);
+            ctx.lineTo(x + 6, boxY + boxH - 1);
+            ctx.lineTo(x, boxY + boxH + 6);
+            ctx.closePath();
+            ctx.fillStyle = bgColor;
+            ctx.fill();
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(x - 5, boxY + boxH - 1);
+            ctx.lineTo(x + 5, boxY + boxH - 1);
+            ctx.strokeStyle = bgColor;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, x, boxY + boxH / 2 + 1);
+            ctx.restore();
+        }
+
+        /**
+         * Desenha Leslie Miho com respiração suave, piscar de olhos e balão de nome
+         */
+        function drawLeslieAt(x, y, customScale = 1, forceSmile = false, isMenu = false) {
+            const breath = Math.sin(leslie.breathCycle);
+            const breathOffsetY = breath * 1.6;
+            const breathScaleY = 1 + breath * 0.025;
+            const breathScaleX = 1 - breath * 0.015;
+            const walkBob = (!isMenu && leslie.isMoving) ? Math.abs(Math.sin(leslie.walkCycle)) * 4 : 0;
+            const footOffset = (!isMenu && leslie.isMoving) ? Math.sin(leslie.walkCycle) * 6 : 0;
+            const totalBob = walkBob + breathOffsetY;
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(customScale, customScale);
+
+            // Sombra no chão
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+            ctx.beginPath();
+            ctx.ellipse(0, 18, 16, 7.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pezinhos
+            ctx.fillStyle = '#be185d';
+            ctx.beginPath();
+            ctx.arc(-7, 15 + footOffset, 4.5, 0, Math.PI * 2);
+            ctx.arc(7, 15 - footOffset, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.scale(breathScaleX, breathScaleY);
+
+            // Cabelo longo atrás
+            ctx.fillStyle = '#271713';
+            drawRoundRect(-16, -24 - totalBob, 32, 34, 14);
+            ctx.fill();
+
+            // Vestido rosa
+            ctx.fillStyle = '#ec4899';
+            ctx.beginPath();
+            ctx.moveTo(-11, -4 - totalBob);
+            ctx.lineTo(11, -4 - totalBob);
+            ctx.lineTo(16, 15 - totalBob);
+            ctx.lineTo(-16, 15 - totalBob);
+            ctx.closePath();
+            ctx.fill();
+
+            // Cinto do vestido
+            ctx.fillStyle = '#fbcfe8';
+            ctx.fillRect(-11, 2 - totalBob, 22, 3.5);
+
+            // Bracinhos
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(-14, 3 - totalBob - footOffset * 0.4, 4.5, 0, Math.PI * 2);
+            ctx.arc(14, 3 - totalBob + footOffset * 0.4, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cabeça
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(0, -16 - totalBob, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Franja
+            ctx.fillStyle = '#271713';
+            ctx.beginPath();
+            ctx.arc(0, -19 - totalBob, 14.5, Math.PI, Math.PI * 2);
+            ctx.fill();
+
+            // Lacinho fofo
+            ctx.fillStyle = '#f43f5e';
+            ctx.beginPath();
+            ctx.arc(10, -28 - totalBob, 4.5, 0, Math.PI * 2);
+            ctx.arc(15, -26 - totalBob, 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Olhos (com piscada natural ou sorriso feliz)
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            if (leslie.happy) {
+                ctx.beginPath();
+                ctx.arc(-5, -15 - totalBob, 3, Math.PI, 0);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(5, -15 - totalBob, 3, Math.PI, 0);
+                ctx.stroke();
+            } else if (leslie.isBlinking) {
+                // Pálpebras fechadas piscando
+                ctx.beginPath();
+                ctx.moveTo(-7.5, -15 - totalBob);
+                ctx.lineTo(-2.5, -15 - totalBob);
+                ctx.moveTo(2.5, -15 - totalBob);
+                ctx.lineTo(7.5, -15 - totalBob);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(-5, -15 - totalBob, 2.3, 0, Math.PI * 2);
+                ctx.arc(5, -15 - totalBob, 2.3, 0, Math.PI * 2);
+                ctx.fill();
+                // Brilho fofo nos olhos
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(-5.7, -15.8 - totalBob, 0.9, 0, Math.PI * 2);
+                ctx.arc(4.3, -15.8 - totalBob, 0.9, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Sorriso doce
+            if (forceSmile || leslie.happy) {
+                ctx.strokeStyle = '#9f1239';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.arc(0, -11.5 - totalBob, 3.6, 0.1 * Math.PI, 0.9 * Math.PI);
+                ctx.stroke();
+            }
+
+            // Bochechas rosadas
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.48)';
+            ctx.beginPath();
+            ctx.arc(-8.5, -12 - totalBob, 3.2, 0, Math.PI * 2);
+            ctx.arc(8.5, -12 - totalBob, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+            ctx.restore();
+
+            // Balão flutuante com o nome "Leslie Miho"
+            const balloonY = y - (43 + totalBob) * customScale;
+            drawNameBalloon(x, balloonY, 'Leslie Miho', '#fff1f2', '#f43f5e', '#be123c');
+        }
+
+        function drawLeslie() {
+            drawLeslieAt(leslie.x, leslie.y, 1, false, false);
+        }
+
+        /**
+         * Desenha Lucas com respiração suave, piscar de olhos e balão de nome
+         */
+        function drawLucasAt(x, y, customScale = 1, forceSmile = false, isMenu = false) {
+            const breath = Math.sin(lucas.breathCycle);
+            const totalBob = breath * 1.8;
+            const breathScaleY = 1 + breath * 0.025;
+            const breathScaleX = 1 - breath * 0.015;
+            const effectiveScale = customScale * (isMenu ? 1 : lucas.scale);
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(effectiveScale, effectiveScale);
+
+            // Anel pulsante de interação no chão quando Leslie está perto no jogo
+            if (!isMenu && state.nearLucas && !state.isKissing) {
+                const pulse = 32 + Math.sin(performance.now() * 0.008) * 5;
+                ctx.strokeStyle = 'rgba(244, 63, 94, 0.75)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 14, pulse, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Sombra no chão
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
+            ctx.beginPath();
+            ctx.ellipse(0, 19, 17, 7.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Calça / Sapatos
+            ctx.fillStyle = '#1e293b';
+            drawRoundRect(-11, 7, 9, 11, 4);
+            ctx.fill();
+            drawRoundRect(2, 7, 9, 11, 4);
+            ctx.fill();
+
+            ctx.save();
+            ctx.scale(breathScaleX, breathScaleY);
+
+            // Camiseta azul
+            ctx.fillStyle = '#2563eb';
+            drawRoundRect(-14, -6 - totalBob, 28, 17, 7);
+            ctx.fill();
+
+            // Bracinhos
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(-16, 2 - totalBob, 4.5, 0, Math.PI * 2);
+            ctx.arc(16, 2 - totalBob, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cabeça
+            ctx.fillStyle = '#fed7aa';
+            ctx.beginPath();
+            ctx.arc(0, -18 - totalBob, 14.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Cabelo e topete do Lucas
+            ctx.fillStyle = '#1e1b18';
+            ctx.beginPath();
+            ctx.arc(0, -21 - totalBob, 15, Math.PI * 0.92, Math.PI * 2.08);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(2, -32 - totalBob, 9, 5, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Olhos (com piscada natural)
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            if (lucas.happy) {
+                ctx.beginPath();
+                ctx.arc(-5, -17 - totalBob, 3, Math.PI, 0);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(5, -17 - totalBob, 3, Math.PI, 0);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.5)';
+                ctx.beginPath();
+                ctx.arc(-8, -13 - totalBob, 3.5, 0, Math.PI * 2);
+                ctx.arc(8, -13 - totalBob, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (lucas.isBlinking) {
+                ctx.beginPath();
+                ctx.moveTo(-7.5, -17 - totalBob);
+                ctx.lineTo(-2.5, -17 - totalBob);
+                ctx.moveTo(2.5, -17 - totalBob);
+                ctx.lineTo(7.5, -17 - totalBob);
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(-5, -17 - totalBob, 2.3, 0, Math.PI * 2);
+                ctx.arc(5, -17 - totalBob, 2.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(-5.7, -17.8 - totalBob, 0.9, 0, Math.PI * 2);
+                ctx.arc(4.3, -17.8 - totalBob, 0.9, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Sorriso simpático
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(0, -13 - totalBob, forceSmile ? 4.5 : 4, 0.15 * Math.PI, 0.85 * Math.PI);
+            ctx.stroke();
+
+            if (forceSmile) {
+                ctx.fillStyle = 'rgba(244, 63, 94, 0.42)';
+                ctx.beginPath();
+                ctx.arc(-8.5, -13.5 - totalBob, 3, 0, Math.PI * 2);
+                ctx.arc(8.5, -13.5 - totalBob, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            ctx.restore();
+            ctx.restore();
+
+            if (isMenu || lucas.scale > 0.6) {
+                const balloonY = y - (45 + totalBob) * effectiveScale;
+                drawNameBalloon(x, balloonY, 'Lucas', '#eff6ff', '#3b82f6', '#1d4ed8');
+            }
+        }
+
+        function drawLucas() {
+            drawLucasAt(lucas.x, lucas.y, 1, false, false);
+        }
+
+        function drawHeartShape(x, y, size, color, alpha) {
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, alpha);
+            ctx.translate(x, y);
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            const topCurveHeight = size * 0.3;
+            ctx.moveTo(0, topCurveHeight);
+            ctx.bezierCurveTo(0, 0, -size / 2, 0, -size / 2, topCurveHeight);
+            ctx.bezierCurveTo(-size / 2, (size + topCurveHeight) / 2, 0, (size + topCurveHeight) / 1.4, 0, size);
+            ctx.bezierCurveTo(0, (size + topCurveHeight) / 1.4, size / 2, (size + topCurveHeight) / 2, size / 2, topCurveHeight);
+            ctx.bezierCurveTo(size / 2, 0, 0, 0, 0, topCurveHeight);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawParticles() {
+            for (const s of state.sparkles) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, s.alpha);
+                ctx.fillStyle = s.color;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            for (const h of state.hearts) {
+                drawHeartShape(h.x, h.y, h.size, h.color, h.alpha);
+            }
+        }
+
+        function drawRadarIndicator() {
+            if (!state.showRadar || state.isKissing) return;
+
+            const dx = lucas.x - leslie.x;
+            const dy = lucas.y - leslie.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < 140) return;
+
+            const angle = Math.atan2(dy, dx);
+            const orbitRadius = 56;
+            const arrowX = leslie.x + Math.cos(angle) * orbitRadius;
+            const arrowY = leslie.y + Math.sin(angle) * orbitRadius;
+
+            ctx.save();
+            ctx.translate(arrowX, arrowY);
+            ctx.rotate(angle);
+
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.9)';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(12, 0);
+            ctx.lineTo(-7, -8);
+            ctx.lineTo(-3, 0);
+            ctx.lineTo(-7, 8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawClickTarget() {
+            if (!state.targetPoint) return;
+            const pulse = 8 + Math.sin(performance.now() * 0.01) * 4;
+            ctx.save();
+            ctx.strokeStyle = 'rgba(236, 72, 153, 0.8)';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(state.targetPoint.x, state.targetPoint.y, pulse, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function render() {
+            const viewW = window.innerWidth;
+            const viewH = window.innerHeight;
+
+            ctx.clearRect(0, 0, viewW, viewH);
+
+            // Se estiver na Tela Inicial, desenha o papel de parede animado
+            if (!state.started) {
+                drawStartScreenWallpaper();
+                return;
+            }
+
+            ctx.save();
+            ctx.translate(-state.camera.x, -state.camera.y);
+
+            // 1. Pisos da Casa
+            drawHouseFloors();
+
+            // 2. Tapetes
+            for (const f of FURNITURE) {
+                if (!f.solid) drawFurnitureItem(f);
+            }
+
+            // 3. Marcador de clique no chão
+            drawClickTarget();
+
+            // 4. Móveis sólidos e Personagens ordenados por profundidade
+            const renderables = [];
+            for (const f of FURNITURE) {
+                if (f.solid) {
+                    renderables.push({ sortY: f.y + f.h, draw: () => drawFurnitureItem(f) });
+                }
+            }
+            renderables.push({ sortY: leslie.y + 15, draw: drawLeslie });
+            renderables.push({ sortY: lucas.y + 15, draw: drawLucas });
+
+            renderables.sort((a, b) => a.sortY - b.sortY);
+            for (const item of renderables) {
+                item.draw();
+            }
+
+            // 5. Paredes da casa
+            drawWalls();
+
+            // 6. Seta Radar & Partículas de Corações
+            drawRadarIndicator();
+            drawParticles();
+
+            ctx.restore();
+        }
+
+        /**
+         * ============================================================================
+         * INICIALIZAÇÃO DO GAME LOOP
+         * ============================================================================
+         */
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min(0.05, (timestamp - lastTime) / 1000);
+            lastTime = timestamp;
+
+            update(dt);
+            render();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            ensureFreePosition(leslie);
+            ensureFreePosition(lucas);
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
+Exibindo ca_a_ao_beijinho_leslie_miho_lucas.html…
